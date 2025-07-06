@@ -81,6 +81,8 @@ You can also deploy components individually:
    - Grafana: http://grafana.local (admin/admin123)
 
    > Add these hostnames to your `/etc/hosts` file if running locally.
+   > 
+   > **📖 For detailed access instructions, see [ACCESS_INSTRUCTIONS.md](ACCESS_INSTRUCTIONS.md)**
 
 ## Monitoring and Logging
 
@@ -126,11 +128,32 @@ You can also clean up components individually:
 - `edc-standalone-cleanup.sh` - Clean up EDC standalone only
 - `monitoring-cleanup.sh` - Clean up monitoring stack only
 
+## Quick Access Reference
+
+### EDC Services
+- **Control Plane**: http://edc-control.local:8181 (API Key: `edc-api-key`)
+- **Data Plane**: http://edc-data.local:8181 (API Key: `edc-peer-api-key`)
+
+### Monitoring Services
+- **Grafana**: http://grafana.local:3000 (admin/admin123)
+- **Prometheus**: http://prometheus.local:9090
+
+### Health Checks
+```bash
+# EDC Health
+curl http://edc-control.local:8181/api/check/health
+curl http://edc-data.local:8181/api/check/health
+
+# Grafana Health
+curl http://grafana.local:3000/api/health
+```
+
 ## Notes
 - All deployment is now managed via Helm charts for better maintainability and consistency.
 - Both EDC standalone and peer are deployed in the same namespace for simplicity. You can split them if needed by adjusting the Helm values.
 - The monitoring stack is fully separated and can be managed independently.
 - Reference configuration files are available in the `config/` directory.
+- **📖 For comprehensive access instructions, see [ACCESS_INSTRUCTIONS.md](ACCESS_INSTRUCTIONS.md)**
 
 ---
 For further customization or troubleshooting, see the comments in the respective Helm chart `values.yaml` files. 
