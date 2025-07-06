@@ -1,0 +1,67 @@
+{{- if .Values.peer.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edc-peer-data-plane
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-standalone.peer.labels" . | nindent 4 }}
+    app: edc-peer-data-plane
+    component: edc-peer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "edc-standalone.peer.selectorLabels" . | nindent 6 }}
+      app: edc-peer-data-plane
+  template:
+    metadata:
+      labels:
+        {{- include "edc-standalone.peer.selectorLabels" . | nindent 8 }}
+        app: edc-peer-data-plane
+        component: edc-peer
+    spec:
+      serviceAccountName: {{ .Values.serviceAccounts.peer.dataPlane.name }}
+      volumes:
+      - name: edc-peer-config-volume
+        configMap:
+          name: edc-peer-config
+      containers:
+      - name: edc-peer-data-plane
+        image: "{{ .Values.edc.image.repository }}:{{ .Values.edc.image.tag }}"
+        imagePullPolicy: {{ .Values.edc.image.pullPolicy }}
+        volumeMounts:
+        - name: edc-peer-config-volume
+          mountPath: /app/configuration.properties
+          subPath: configuration.properties
+        ports:
+        - containerPort: {{ .Values.edc.ports.http }}
+          name: http
+        env:
+        - name: EDC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: edc-peer-secrets
+              key: api-key
+        - name: EDC_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: edc-peer-secrets
+              key: jwt-secret
+        resources:
+          {{- toYaml .Values.edc.resources.dataPlane | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.edc.ports.http }}
+          initialDelaySeconds: {{ .Values.edc.healthChecks.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.edc.healthChecks.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.edc.healthChecks.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.edc.healthChecks.liveness.failureThreshold }}
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.edc.ports.http }}
+          initialDelaySeconds: {{ .Values.edc.healthChecks.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.edc.healthChecks.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.edc.healthChecks.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.edc.healthChecks.readiness.failureThreshold }}
+{{- end }} 

@@ -1,0 +1,114 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.prometheus.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-monitoring.monitoring.labels" . | nindent 4 }}
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: {{ .Values.monitoring.prometheus.config.scrape_interval }}
+      evaluation_interval: 15s
+
+    rule_files:
+      # - "first_rules.yml"
+      # - "second_rules.yml"
+
+    scrape_configs:
+      - job_name: 'prometheus'
+        static_configs:
+          - targets: ['localhost:9090']
+
+      - job_name: 'edc-control-plane'
+        static_configs:
+          - targets: ['edc-control-plane.edc-standalone.svc.cluster.local:8181']
+        metrics_path: '{{ .Values.monitoring.prometheus.config.metrics_path }}'
+        scrape_interval: {{ .Values.monitoring.prometheus.config.scrape_interval }}
+
+      - job_name: 'edc-data-plane'
+        static_configs:
+          - targets: ['edc-data-plane.edc-standalone.svc.cluster.local:8181']
+        metrics_path: '{{ .Values.monitoring.prometheus.config.metrics_path }}'
+        scrape_interval: {{ .Values.monitoring.prometheus.config.scrape_interval }}
+
+      - job_name: 'edc-peer-control-plane'
+        static_configs:
+          - targets: ['edc-peer-control-plane.edc-standalone.svc.cluster.local:8181']
+        metrics_path: '{{ .Values.monitoring.prometheus.config.metrics_path }}'
+        scrape_interval: {{ .Values.monitoring.prometheus.config.scrape_interval }}
+
+      - job_name: 'edc-peer-data-plane'
+        static_configs:
+          - targets: ['edc-peer-data-plane.edc-standalone.svc.cluster.local:8181']
+        metrics_path: '{{ .Values.monitoring.prometheus.config.metrics_path }}'
+        scrape_interval: {{ .Values.monitoring.prometheus.config.scrape_interval }}
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-monitoring.monitoring.labels" . | nindent 4 }}
+    app: prometheus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      serviceAccountName: prometheus-sa
+      containers:
+      - name: prometheus
+        image: "{{ .Values.monitoring.prometheus.image.repository }}:{{ .Values.monitoring.prometheus.image.tag }}"
+        imagePullPolicy: {{ .Values.monitoring.prometheus.image.pullPolicy }}
+        args:
+          - '--config.file=/etc/prometheus/prometheus.yml'
+          - '--storage.tsdb.path=/prometheus'
+          - '--web.console.libraries=/etc/prometheus/console_libraries'
+          - '--web.console.templates=/etc/prometheus/consoles'
+          - '--storage.tsdb.retention.time=200h'
+          - '--web.enable-lifecycle'
+        ports:
+        - containerPort: {{ .Values.monitoring.prometheus.service.port }}
+        volumeMounts:
+        - name: prometheus-config-volume
+          mountPath: /etc/prometheus/
+        - name: prometheus-storage-volume
+          mountPath: /prometheus
+        resources:
+          {{- toYaml .Values.monitoring.prometheus.resources | nindent 10 }}
+      volumes:
+      - name: prometheus-config-volume
+        configMap:
+          defaultMode: 420
+          name: prometheus-config
+      - name: prometheus-storage-volume
+        emptyDir: {}
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-monitoring.monitoring.labels" . | nindent 4 }}
+    app: prometheus
+spec:
+  type: {{ .Values.monitoring.prometheus.service.type }}
+  ports:
+  - port: {{ .Values.monitoring.prometheus.service.port }}
+    targetPort: {{ .Values.monitoring.prometheus.service.port }}
+    protocol: TCP
+    name: http
+  selector:
+    app: prometheus
+{{- end }} 

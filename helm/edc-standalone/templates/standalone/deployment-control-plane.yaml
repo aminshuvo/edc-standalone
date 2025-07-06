@@ -1,0 +1,68 @@
+{{- if .Values.standalone.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: edc-control-plane
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-standalone.standalone.labels" . | nindent 4 }}
+    app: edc-control-plane
+    component: edc
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: edc-control-plane
+      component: edc
+      {{- include "edc-standalone.standalone.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app: edc-control-plane
+        component: edc
+        {{- include "edc-standalone.standalone.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ .Values.serviceAccounts.standalone.controlPlane.name }}
+      volumes:
+      - name: edc-config-volume
+        configMap:
+          name: edc-standalone-config
+      containers:
+      - name: edc-control-plane
+        image: "{{ .Values.edc.image.repository }}:{{ .Values.edc.image.tag }}"
+        imagePullPolicy: {{ .Values.edc.image.pullPolicy }}
+        volumeMounts:
+        - name: edc-config-volume
+          mountPath: /app/configuration.properties
+          subPath: configuration.properties
+        ports:
+        - containerPort: {{ .Values.edc.ports.http }}
+          name: http
+        env:
+        - name: EDC_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: edc-standalone-secrets
+              key: api-key
+        - name: EDC_JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: edc-standalone-secrets
+              key: jwt-secret
+        resources:
+          {{- toYaml .Values.edc.resources.controlPlane | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: {{ .Values.edc.ports.http }}
+          initialDelaySeconds: {{ .Values.edc.healthChecks.liveness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.edc.healthChecks.liveness.periodSeconds }}
+          timeoutSeconds: {{ .Values.edc.healthChecks.liveness.timeoutSeconds }}
+          failureThreshold: {{ .Values.edc.healthChecks.liveness.failureThreshold }}
+        readinessProbe:
+          tcpSocket:
+            port: {{ .Values.edc.ports.http }}
+          initialDelaySeconds: {{ .Values.edc.healthChecks.readiness.initialDelaySeconds }}
+          periodSeconds: {{ .Values.edc.healthChecks.readiness.periodSeconds }}
+          timeoutSeconds: {{ .Values.edc.healthChecks.readiness.timeoutSeconds }}
+          failureThreshold: {{ .Values.edc.healthChecks.readiness.failureThreshold }}
+{{- end }} 

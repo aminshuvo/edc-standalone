@@ -1,0 +1,12 @@
+{{- if .Values.peer.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edc-peer-config
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-standalone.peer.labels" . | nindent 4 }}
+data:
+  configuration.properties: |
+{{ include "edc-standalone.config.properties" .Values.peer.config | nindent 4 }}
+{{- end }} 

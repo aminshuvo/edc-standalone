@@ -1,0 +1,40 @@
+{{- if .Values.standalone.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edc-control-plane
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-standalone.standalone.labels" . | nindent 4 }}
+    app: edc-control-plane
+    component: edc
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.edc.ports.http }}
+    targetPort: {{ .Values.edc.ports.http }}
+    name: http
+  selector:
+    {{- include "edc-standalone.standalone.selectorLabels" . | nindent 4 }}
+    app: edc-control-plane
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edc-data-plane
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-standalone.standalone.labels" . | nindent 4 }}
+    app: edc-data-plane
+    component: edc
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.edc.ports.http }}
+    targetPort: {{ .Values.edc.ports.http }}
+    name: http
+  selector:
+    {{- include "edc-standalone.standalone.selectorLabels" . | nindent 4 }}
+    app: edc-data-plane
+{{- end }} 

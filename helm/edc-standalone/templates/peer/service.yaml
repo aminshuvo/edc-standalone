@@ -1,0 +1,40 @@
+{{- if .Values.peer.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edc-peer-control-plane
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-standalone.peer.labels" . | nindent 4 }}
+    app: edc-peer-control-plane
+    component: edc-peer
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.edc.ports.http }}
+    targetPort: {{ .Values.edc.ports.http }}
+    name: http
+  selector:
+    {{- include "edc-standalone.peer.selectorLabels" . | nindent 4 }}
+    app: edc-peer-control-plane
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: edc-peer-data-plane
+  namespace: {{ .Release.Namespace }}
+  labels:
+    {{- include "edc-standalone.peer.labels" . | nindent 4 }}
+    app: edc-peer-data-plane
+    component: edc-peer
+spec:
+  type: ClusterIP
+  ports:
+  - port: {{ .Values.edc.ports.http }}
+    targetPort: {{ .Values.edc.ports.http }}
+    name: http
+  selector:
+    {{- include "edc-standalone.peer.selectorLabels" . | nindent 4 }}
+    app: edc-peer-data-plane
+{{- end }} 

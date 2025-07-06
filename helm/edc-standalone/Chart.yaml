@@ -1,0 +1,18 @@
+apiVersion: v2
+name: edc-standalone
+description: A Helm chart for Eclipse Dataspace Connector (EDC) Standalone deployment with monitoring
+type: application
+version: 0.1.0
+appVersion: "0.7.0"
+keywords:
+  - edc
+  - dataspace
+  - connector
+  - eclipse
+  - tractus-x
+home: https://github.com/eclipse-edc/Connector
+sources:
+  - https://github.com/eclipse-edc/Connector
+maintainers:
+  - name: EDC Team
+    email: edc-dev@eclipse.org 
